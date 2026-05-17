@@ -1,44 +1,11 @@
-Industry
-Accounting/Finance
-Advertising/Public Relations
-Aerospace/Aviation
-Arts/Entertainment/Publishing
-Automotive
-Banking/Mortgage
-Business Development
-Business Opportunity
-Clerical/Administrative
-Construction/Facilities
-Consumer Goods
-Customer Service
-Education/Training
-Energy/Utilities
-Engineering
-Government/Military
-Green
-Healthcare
-Hospitality/Travel
-Human Resources
-Installation/Maintenance
-Insurance
-Internet
-Job Search Aids
-Law Enforcement/Security
-Legal
-Management/Executive
-Manufacturing/Operations
-Marketing
-Non-Profit/Volunteer
-Pharmaceutical/Biotech
-Professional Services
-QA/Quality Control
-Real Estate
-Restaurant/Food Service
-Retail
-Sales
-Science/Research
-Skilled Labor
-Technology
-Telecommunications
-Transportation/Logistics
-Other
+date,revenue,profit,orders,customers,region,marketing_spend,inventory_cost,returns
+2025-01-01,1000,200,20,18,East,300,500,2
+2025-02-01,1200,250,22,20,East,350,520,1
+2025-03-01,1500,400,30,28,West,400,600,3
+2025-04-01,1800,500,35,32,North,450,650,2
+2025-05-01,5000,1000,90,85,South,1200,1500,15
+2025-06-01,1700,450,31,29,East,420,610,2
+2025-07-01,1600,430,29,27,West,410,590,2
+2025-08-01,200,20,5,4,North,50,200,8
+2025-09-01,2100,600,40,38,South,500,700,1
+2025-10-01,2200,650,42,40,East,520,710,2

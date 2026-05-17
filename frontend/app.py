@@ -53,6 +53,14 @@ section[data-testid="stSidebar"] {
     overflow: hidden;
 }
 
+/* Metric styling */
+[data-testid="metric-container"] {
+    background-color: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 15px;
+    border-radius: 12px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,10 +107,18 @@ uploaded_file = st.file_uploader(
 )
 
 # ------------------------------------------------
+# IF NO FILE
+# ------------------------------------------------
+
+if uploaded_file is None:
+
+    st.info("Upload a dataset to begin analysis.")
+
+# ------------------------------------------------
 # PROCESS FILE
 # ------------------------------------------------
 
-if uploaded_file is not None:
+else:
 
     with st.spinner("Analyzing business dataset..."):
 
@@ -116,9 +132,23 @@ if uploaded_file is not None:
             }
         )
 
-        data = response.json()
+    # ------------------------------------------------
+    # SAFE ERROR HANDLING
+    # ------------------------------------------------
+
+    if response.status_code != 200:
+
+        st.error("Backend Error")
+
+        st.text(response.text)
+
+        st.stop()
+
+    data = response.json()
 
     st.success("Dataset processed successfully")
+
+    preview_df = pd.DataFrame(data["preview"])
 
     # ------------------------------------------------
     # DASHBOARD PAGE
@@ -164,7 +194,9 @@ if uploaded_file is not None:
 
         st.markdown("---")
 
+        # ------------------------------------------------
         # KPI SECTION
+        # ------------------------------------------------
 
         st.header("Business KPIs")
 
@@ -172,28 +204,30 @@ if uploaded_file is not None:
             "http://127.0.0.1:8000/kpis"
         )
 
-        kpi_data = kpi_response.json()["kpis"]
+        if kpi_response.status_code == 200:
 
-        k1, k2, k3, k4 = st.columns(4)
+            kpi_data = kpi_response.json()["kpis"]
 
-        kpi_columns = [k1, k2, k3, k4]
+            k1, k2, k3, k4 = st.columns(4)
 
-        for col, (name, value) in zip(
-            kpi_columns,
-            kpi_data.items()
-        ):
+            kpi_columns = [k1, k2, k3, k4]
 
-            with col:
-                st.metric(
-                    label=name,
-                    value=value
-                )
+            for col, (name, value) in zip(
+                kpi_columns,
+                kpi_data.items()
+            ):
+
+                with col:
+                    st.metric(
+                        label=name,
+                        value=value
+                    )
 
         st.markdown("---")
 
-        # CHARTS
-
-        preview_df = pd.DataFrame(data["preview"])
+        # ------------------------------------------------
+        # REVENUE CHART
+        # ------------------------------------------------
 
         if "revenue" in preview_df.columns:
 
@@ -202,7 +236,9 @@ if uploaded_file is not None:
             fig = px.line(
                 preview_df,
                 y="revenue",
-                title="Revenue Trend"
+                x=preview_df.index,
+                title="Revenue Trend",
+                markers=True
             )
 
             fig.update_layout(
@@ -241,14 +277,25 @@ if uploaded_file is not None:
 
         st.markdown("---")
 
-        st.header("Data Preview")
-
-        preview_df = pd.DataFrame(data["preview"])
+        st.header("Dataset Preview")
 
         st.dataframe(
             preview_df,
             use_container_width=True
         )
+
+        st.markdown("---")
+
+        st.header("Data Quality Report")
+
+        validation = data["validation"]
+
+        st.write("Missing Values")
+        st.json(validation["missing_values"])
+
+        st.write(f"Total Missing Values: {validation['total_missing']}")
+        st.write(f"Duplicate Rows: {validation['duplicate_rows']}")
+        st.write(f"Quality Score: {validation['quality_score']}%")
 
     # ------------------------------------------------
     # KPI PAGE
@@ -262,41 +309,239 @@ if uploaded_file is not None:
             "http://127.0.0.1:8000/kpis"
         )
 
-        kpi_data = kpi_response.json()["kpis"]
+        if kpi_response.status_code == 200:
 
-        kpi_df = pd.DataFrame(
-            list(kpi_data.items()),
-            columns=["KPI", "Value"]
-        )
+            kpi_data = kpi_response.json()["kpis"]
 
-        st.dataframe(
-            kpi_df,
-            use_container_width=True
-        )
+            kpi_df = pd.DataFrame(
+                list(kpi_data.items()),
+                columns=["KPI", "Value"]
+            )
+
+            st.dataframe(
+                kpi_df,
+                use_container_width=True
+            )
+
+            fig = px.bar(
+                kpi_df,
+                x="KPI",
+                y="Value",
+                title="KPI Comparison"
+            )
+
+            fig.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="#0E1117",
+                plot_bgcolor="#1A1F2B",
+                font_color="white"
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
 
     # ------------------------------------------------
-    # PLACEHOLDER PAGES
+    # FORECASTING PAGE
     # ------------------------------------------------
 
     elif page == "Forecasting":
 
         st.header("Forecasting Engine")
-        st.info("Forecasting models coming in Phase 6")
+
+        st.info(
+            "Forecasting models will be integrated in Phase 6."
+        )
+
+        if "revenue" in preview_df.columns:
+
+            fig = px.line(
+                preview_df,
+                y="revenue",
+                title="Historical Revenue"
+            )
+
+            fig.update_layout(
+                template="plotly_dark",
+                paper_bgcolor="#0E1117",
+                plot_bgcolor="#1A1F2B",
+                font_color="white"
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+    # ------------------------------------------------
+    # ANOMALY DETECTION PAGE
+    # ------------------------------------------------
 
     elif page == "Anomaly Detection":
 
-        st.header("Anomaly Detection Engine")
-        st.info("Anomaly detection coming in Phase 5")
+        st.header("Operational Risk Intelligence")
+
+        anomaly_response = requests.get(
+            "http://127.0.0.1:8000/anomalies"
+        )
+
+        if anomaly_response.status_code != 200:
+
+            st.error("Failed to load anomaly analytics")
+
+            st.stop()
+
+        anomaly_data = anomaly_response.json()
+
+        # ------------------------------------------------
+        # RISK METRICS
+        # ------------------------------------------------
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Risk Score",
+                f"{anomaly_data['risk_score']}%"
+            )
+
+        with col2:
+            st.metric(
+                "Risk Level",
+                anomaly_data["risk_level"]
+            )
+
+        with col3:
+            st.metric(
+                "Detected Anomalies",
+                anomaly_data[
+                    "isolation_forest_detection"
+                ]["total_anomalies"]
+            )
+
+        st.markdown("---")
+
+        # ------------------------------------------------
+        # ANOMALY TABLE
+        # ------------------------------------------------
+
+        st.subheader("Detected Anomalies")
+
+        anomalies = anomaly_data[
+            "isolation_forest_detection"
+        ]["anomaly_records"]
+
+        if len(anomalies) > 0:
+
+            anomaly_df = pd.DataFrame(anomalies)
+
+            st.dataframe(
+                anomaly_df,
+                use_container_width=True
+            )
+
+            # ------------------------------------------------
+            # ANOMALY VISUALIZATION
+            # ------------------------------------------------
+
+            if "revenue" in anomaly_df.columns:
+
+                st.subheader("Revenue Anomaly Analysis")
+
+                fig = px.scatter(
+                    anomaly_df,
+                    x="date",
+                    y="revenue",
+                    color="revenue",
+                    size="revenue",
+                    hover_data=anomaly_df.columns,
+                    title="Detected Revenue Anomalies"
+                )
+
+                fig.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="#0E1117",
+                    plot_bgcolor="#1A1F2B",
+                    font_color="white"
+                )
+
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True
+                )
+
+            # ------------------------------------------------
+            # AI INTERPRETATION
+            # ------------------------------------------------
+
+            st.markdown("---")
+
+            st.subheader("AI Risk Interpretation")
+
+            risk_level = anomaly_data["risk_level"]
+
+            if risk_level == "HIGH":
+
+                st.error("""
+                Significant operational anomalies detected.
+
+                Potential causes may include:
+                - revenue spikes or crashes
+                - abnormal operational behavior
+                - inventory imbalance
+                - customer demand fluctuations
+
+                Immediate investigation is recommended.
+                """)
+
+            elif risk_level == "MODERATE":
+
+                st.warning("""
+                Moderate anomaly activity detected.
+
+                Some business metrics are deviating
+                from expected operational behavior.
+                """)
+
+            else:
+
+                st.success("""
+                Business operations appear stable.
+
+                No major operational anomalies detected.
+                """)
+
+        else:
+
+            st.success(
+                "No significant anomalies detected"
+            )
+
+    # ------------------------------------------------
+    # AI INSIGHTS PAGE
+    # ------------------------------------------------
 
     elif page == "AI Insights":
 
         st.header("AI Executive Insights")
 
         st.markdown("""
-        ### AI Generated Business Summary
+        ### Executive Business Summary
 
-        - Revenue performance is stable.
-        - Operational efficiency remains healthy.
-        - No major anomalies currently detected.
-        - Forecast models will appear here.
+        - Revenue trends appear stable across reporting periods.
+        - Operational efficiency remains within expected thresholds.
+        - Current anomaly detection indicates manageable business risk.
+        - Forecasting and predictive intelligence modules will enhance future planning.
+        """)
+
+        st.markdown("---")
+
+        st.subheader("Strategic Recommendations")
+
+        st.info("""
+        - Monitor operational costs closely.
+        - Increase customer retention strategies.
+        - Investigate unusual revenue spikes.
+        - Improve forecasting readiness with larger datasets.
         """)
