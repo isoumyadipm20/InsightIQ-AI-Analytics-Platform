@@ -317,4 +317,4 @@ into a unified analytics ecosystem.
 
 Soumyadip Mukherjee
 
-AI/ML • Analytics Engineering • Quantum Computing • Full Stack AI Systems
+AI/ML • Analytics Engineering  • Full Stack AI Systems
