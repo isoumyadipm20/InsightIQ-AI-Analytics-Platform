@@ -246,7 +246,6 @@ insightiq/
 
 # Screenshots
 
-(Add dashboard screenshots here)
 
 ---
 
