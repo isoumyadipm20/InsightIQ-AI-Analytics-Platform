@@ -244,8 +244,6 @@ insightiq/
 
 ---
 
-# Screenshots
-
 
 ---
 
